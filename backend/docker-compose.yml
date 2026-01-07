@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: strongpassword
+      POSTGRES_DB: learning_platform
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: strongpassword
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - backend
+  
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - backend
+
+  api:
+    build: .
+    container_name: api
+    restart: always
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      MONGO_URI: mongodb://admin:strongpassword@mongo:27017/
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-key-change-this-in-production
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    networks:
+      - backend
+
+volumes:
+  mongo_data:
+  redis_data:
+  postgres_data:
+
+networks:
+  backend:
+    driver: bridge
