@@ -11,7 +11,7 @@ import bcrypt
 import os
 from contextlib import asynccontextmanager
 from redis_client import redis_client
-# from analytics import init_analytics_db
+
 
 from fastapi import File, UploadFile, Form
 import mimetypes
@@ -20,16 +20,16 @@ import mimetypes
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    
     await redis_client.connect()
-    # await init_analytics_db()
+    
     yield
-    # Shutdown
+    
     await redis_client.disconnect()
 
 app = FastAPI(title="Learning Platform API", lifespan=lifespan)
 
-# CORS middleware
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,19 +41,19 @@ app.add_middleware(
 
 
 
-# MongoDB connection
+
 MONGO_URL = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 
 client = AsyncIOMotorClient(MONGO_URL)
 
 db = client["learning_platform"]
 
-# JWT configuration
+
 SECRET_KEY = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
 security = HTTPBearer()
 
-# Pydantic models
+
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
@@ -159,16 +159,16 @@ def deserialize_doc(doc):
     
     return doc
 
-# Authentication endpoints
+
 @app.post("/api/auth/register")
 async def register(user: UserRegister):
     print("right")
-    # Check if user exists
+    
     existing = await db.users.find_one({"email": user.email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Create user
+    
     user_doc = {
         "email": user.email,
         "password": hash_password(user.password),
@@ -221,7 +221,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "role": user["role"]
     }
 
-# Course endpoints
+
 @app.post("/api/courses")
 async def create_course(course: CourseCreate, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "teacher":
@@ -245,10 +245,10 @@ async def create_course(course: CourseCreate, current_user: dict = Depends(get_c
 @app.get("/api/courses")
 async def get_courses(current_user: dict = Depends(get_current_user)):
     if current_user["role"] == "teacher":
-        # Teachers see their own courses
+        
         cursor = db.courses.find({"teacher_id": current_user["user_id"]})
     else:
-        # Students see public courses and courses they're invited to
+        
         cursor = db.courses.find({
             "$or": [
                 {"is_public": True},
@@ -300,7 +300,7 @@ async def upload_material(
         raise HTTPException(status_code=403, detail="Only teachers can upload materials")
     print("this far -1 ")
     
-    # Verify teacher owns the course
+    
     try:
         course = await db.courses.find_one({
             "_id": ObjectId(course_id),
@@ -312,7 +312,7 @@ async def upload_material(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found or access denied")
     
-    # Validate file type
+    
     if file_type not in ["video", "document"]:
         raise HTTPException(status_code=400, detail="Invalid file type. Must be 'video' or 'document'")
     print("this far")
@@ -347,7 +347,7 @@ async def upload_material(
 
 @app.get("/api/courses/{course_id}/materials")
 async def get_course_materials(course_id: str, current_user: dict = Depends(get_current_user)):
-    # Verify access to course
+    
     try:
         course = await db.courses.find_one({"_id": ObjectId(course_id)})
     except:
@@ -356,7 +356,7 @@ async def get_course_materials(course_id: str, current_user: dict = Depends(get_
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
-    # Check access
+    
     if current_user["role"] == "student":
         if not course["is_public"] and current_user["email"] not in course.get("students", []):
             raise HTTPException(status_code=403, detail="Access denied")
@@ -381,7 +381,7 @@ async def delete_material(course_id: str, material_id: str, current_user: dict =
     if current_user["role"] != "teacher":
         raise HTTPException(status_code=403, detail="Only teachers can delete materials")
     
-    # Verify teacher owns the course
+    
     try:
         course = await db.courses.find_one({
             "_id": ObjectId(course_id),
@@ -403,7 +403,7 @@ async def get_enrolled_courses(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "student":
         raise HTTPException(status_code=403, detail="Only students can view enrolled courses")
     
-    # Find enrollments for this student
+    
     cursor = db.enrollments.find({"student_id": current_user["user_id"]})
     enrollments = await cursor.to_list(length=None)
     
@@ -483,13 +483,13 @@ async def delete_course(course_id: str, current_user: dict = Depends(get_current
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Course not found or access denied")
     
-    # Clean up related data
+    
     await db.tests.delete_many({"course_id": course_id})
     await db.enrollments.delete_many({"course_id": course_id})
     
     return {"message": "Course deleted successfully"}
 
-# Invitation endpoints
+
 @app.post("/api/courses/{course_id}/invite")
 async def invite_student(course_id: str, invite: InviteStudent, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "teacher":
@@ -503,7 +503,7 @@ async def invite_student(course_id: str, invite: InviteStudent, current_user: di
     if not course:
         raise HTTPException(status_code=404, detail="Course not found or access denied")
     
-    # Add student email to course
+    
     await db.courses.update_one(
         {"_id": ObjectId(course_id)},
         {"$addToSet": {"students": invite.student_email}}
@@ -524,7 +524,7 @@ async def get_course_students(course_id: str, current_user: dict = Depends(get_c
     if not course:
         raise HTTPException(status_code=404, detail="Course not found or access denied")
     
-    # Get enrolled students
+    
     cursor = db.enrollments.find({"course_id": course_id})
     enrollments = await cursor.to_list(length=None)
     
@@ -543,7 +543,7 @@ async def get_course_students(course_id: str, current_user: dict = Depends(get_c
     
     return students
 
-# Enrollment endpoints
+
 @app.post("/api/courses/{course_id}/enroll")
 async def enroll_in_course(course_id: str, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "student":
@@ -557,11 +557,11 @@ async def enroll_in_course(course_id: str, current_user: dict = Depends(get_curr
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
-    # Check if student has access
+    
     if not course["is_public"] and current_user["email"] not in course.get("students", []):
         raise HTTPException(status_code=403, detail="This course is private")
     
-    # Check if already enrolled
+    
     existing = await db.enrollments.find_one({
         "course_id": course_id,
         "student_id": current_user["user_id"]
@@ -579,13 +579,13 @@ async def enroll_in_course(course_id: str, current_user: dict = Depends(get_curr
     
     return {"message": "Enrolled successfully"}
 
-# Test endpoints
+
 @app.post("/api/tests")
 async def create_test(test: TestCreate, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "teacher":
         raise HTTPException(status_code=403, detail="Only teachers can create tests")
     
-    # Verify teacher owns the course
+    
     try:
         course = await db.courses.find_one({
             "_id": ObjectId(test.course_id),
@@ -611,7 +611,7 @@ async def create_test(test: TestCreate, current_user: dict = Depends(get_current
 
 @app.get("/api/courses/{course_id}/tests")
 async def get_course_tests(course_id: str, current_user: dict = Depends(get_current_user)):
-    # Verify access to course
+    
     try:
         course = await db.courses.find_one({"_id": ObjectId(course_id)})
     except:
@@ -635,17 +635,17 @@ async def get_course_tests(course_id: str, current_user: dict = Depends(get_curr
             "created_at": test["created_at"]
         }
         
-        # Only include questions for teachers or if student hasn't submitted yet
+        
         if current_user["role"] == "teacher":
             test_data["questions"] = test["questions"]
         else:
-            # Check if student has submitted
+            
             submission = await db.submissions.find_one({
                 "test_id": str(test["_id"]),
                 "student_id": current_user["user_id"]
             })
             if not submission:
-                # Remove correct answers for students
+                
                 test_data["questions"] = [
                     {
                         "question": q["question"],
@@ -660,7 +660,7 @@ async def get_course_tests(course_id: str, current_user: dict = Depends(get_curr
 
 @app.get("/api/courses/{course_id}/tests/{test_id}")
 async def get_course_tests(course_id ,test_id: str, current_user: dict = Depends(get_current_user)):
-    # Verify access to course
+    
     try:
         test = await db.tests.find_one({"_id": ObjectId(test_id)})
         course = await db.courses.find_one({"_id": ObjectId(course_id)})
@@ -706,7 +706,7 @@ async def submit_test(submission: TestSubmission, current_user: dict = Depends(g
     if current_user["role"] != "student":
         raise HTTPException(status_code=403, detail="Only students can submit tests")
     
-    # Get test
+    
     try:
         test = await db.tests.find_one({"_id": ObjectId(submission.test_id)})
     except:
@@ -715,7 +715,7 @@ async def submit_test(submission: TestSubmission, current_user: dict = Depends(g
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
     
-    # Check if already submitted
+    
     existing = await db.submissions.find_one({
         "test_id": submission.test_id,
         "student_id": current_user["user_id"]
@@ -724,7 +724,7 @@ async def submit_test(submission: TestSubmission, current_user: dict = Depends(g
     if existing:
         raise HTTPException(status_code=400, detail="Test already submitted")
     
-    # Calculate score
+    
     correct = 0
     total = len(test["questions"])
     for i, answer in enumerate(submission.answers):
@@ -750,7 +750,7 @@ async def submit_test(submission: TestSubmission, current_user: dict = Depends(g
 
 @app.get("/api/tests/{test_id}/submissions")
 async def get_test_submissions(test_id: str, current_user: dict = Depends(get_current_user)):
-    # Get test to verify ownership
+    
     try:
         test = await db.tests.find_one({"_id": ObjectId(test_id)})
     except:
@@ -759,7 +759,7 @@ async def get_test_submissions(test_id: str, current_user: dict = Depends(get_cu
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
     
-    # Verify teacher owns the course
+    
     course = await db.courses.find_one({
         "_id": ObjectId(test["course_id"]),
         "teacher_id": current_user["user_id"]
@@ -769,7 +769,7 @@ async def get_test_submissions(test_id: str, current_user: dict = Depends(get_cu
         raise HTTPException(status_code=403, detail="Access denied")
     
     if current_user["role"] == "student":
-        # Students can only see their own submission
+        
         submission = await db.submissions.find_one({
             "test_id": test_id,
             "student_id": current_user["user_id"]
@@ -781,11 +781,11 @@ async def get_test_submissions(test_id: str, current_user: dict = Depends(get_cu
         submission.pop("_id")
         return submission
     else:
-        # Teachers see all submissions
+        
         cursor = db.submissions.find({"test_id": test_id})
         submissions = []
         async for sub in cursor:
-            # Get student info
+            
             student = await db.users.find_one({"_id": ObjectId(sub["student_id"])})
             submissions.append({
                 "id": str(sub["_id"]),

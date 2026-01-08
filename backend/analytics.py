@@ -5,7 +5,6 @@ from sqlalchemy.sql import func
 from datetime import datetime
 import os
 
-# PostgreSQL connection for analytics
 POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql://admin:strongpassword@localhost:5432/analytics_platform")
 ASYNC_POSTGRES_URL = POSTGRES_URL.replace("postgresql://", "postgresql+asyncpg://")
 
@@ -14,23 +13,20 @@ async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_
 
 Base = declarative_base()
 
-# Analytics Tables
 class UserActivity(Base):
-    """Track user login/activity patterns"""
     __tablename__ = "user_activities"
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True, nullable=False)
     email = Column(String, index=True)
     role = Column(String, index=True)
-    action = Column(String, nullable=False)  # 'login', 'logout', 'view_course', 'enroll', etc.
+    action = Column(String, nullable=False) 
     timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     ip_address = Column(String)
     user_agent = Column(Text)
-    metadata = Column(JSON)  # Additional contextual data
+    metadata = Column(JSON) 
 
 class TestAnalytics(Base):
-    """Store test performance data for analytics"""
     __tablename__ = "test_analytics"
     
     id = Column(Integer, primary_key=True, index=True)
@@ -41,12 +37,11 @@ class TestAnalytics(Base):
     score = Column(Float, nullable=False)
     total_questions = Column(Integer, nullable=False)
     correct_answers = Column(Integer, nullable=False)
-    time_taken_seconds = Column(Integer)  # Time to complete test
+    time_taken_seconds = Column(Integer) 
     submitted_at = Column(DateTime(timezone=True), nullable=False, index=True)
-    questions_data = Column(JSON)  # Detailed question-by-question analysis
+    questions_data = Column(JSON) 
 
 class CourseAnalytics(Base):
-    """Aggregated course statistics"""
     __tablename__ = "course_analytics"
     
     id = Column(Integer, primary_key=True, index=True)
@@ -63,7 +58,6 @@ class CourseAnalytics(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 class EnrollmentAnalytics(Base):
-    """Track enrollment patterns"""
     __tablename__ = "enrollment_analytics"
     
     id = Column(Integer, primary_key=True, index=True)
@@ -80,14 +74,13 @@ class EnrollmentAnalytics(Base):
     is_active = Column(Boolean, default=True)
 
 class MaterialAnalytics(Base):
-    """Track material view/download patterns"""
     __tablename__ = "material_analytics"
     
     id = Column(Integer, primary_key=True, index=True)
     material_id = Column(String, index=True, nullable=False)
     course_id = Column(String, index=True, nullable=False)
     material_title = Column(String)
-    file_type = Column(String, index=True)  # 'video', 'document'
+    file_type = Column(String, index=True) 
     total_views = Column(Integer, default=0)
     unique_viewers = Column(Integer, default=0)
     avg_view_duration_seconds = Column(Integer)
@@ -96,7 +89,6 @@ class MaterialAnalytics(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 class DailyMetrics(Base):
-    """Daily aggregated platform metrics"""
     __tablename__ = "daily_metrics"
     
     id = Column(Integer, primary_key=True, index=True)
@@ -112,13 +104,11 @@ class DailyMetrics(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 async def init_analytics_db():
-    """Initialize analytics database tables"""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    print("✅ Analytics PostgreSQL tables created")
+    print("Analytics PostgreSQL tables created")
 
 async def get_analytics_db():
-    """Dependency for getting analytics DB session"""
     async with async_session_maker() as session:
         try:
             yield session
