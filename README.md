@@ -1,48 +1,54 @@
-# TeachUP - Plateforme d'Apprentissage en Ligne (LMS)
+# TeachUP
 
-**TeachUP** est une plateforme de gestion de l'apprentissage (LMS) moderne conçue pour faciliter l'interaction entre enseignants et étudiants. Elle permet la création de cours multimédias, la gestion des évaluations (quiz) et le suivi analytique des performances.
+**Lien du dépôt :** [https://github.com/irealycode/teachup](https://github.com/irealycode/teachup)
 
-Ce projet met en œuvre une **architecture de persistance polyglotte** combinant la flexibilité du NoSQL (MongoDB, Redis) pour le contenu et la rigueur du SQL (PostgreSQL) pour les données analytiques.
+## 📄 Description courte du projet
 
----
+TeachUP est une plateforme éducative (LMS) moderne conçue pour faciliter l'interaction entre enseignants et étudiants.
+* **Pour les enseignants :** Un tableau de bord complet pour créer des cours, générer des examens, et gérer les soumissions des élèves.
+* **Pour les étudiants :** Une interface intuitive pour accéder aux cours, passer des tests en ligne et suivre leur progression.
 
-## 🔗 URL du Projet
+Le projet est divisé en deux parties principales :
+* **Frontend :** Une application **Next.js** (React) utilisant Tailwind CSS pour l'interface.
+* **Backend :** Une API **Python** (avec Redis pour la gestion des données) conteneurisée via Docker.
 
-* **Application Frontend :** [http://localhost:3000](http://localhost:3000)
-* **Documentation API (Swagger) :** [http://localhost:8000/docs](http://localhost:8000/docs)
-* **Dépôt GitHub :** [https://github.com/irealycode/teachup](https://github.com/irealycode/teachup)
+## 🛠 Prérequis
 
----
+Avant de commencer, assurez-vous d'avoir installé les outils suivants sur votre machine :
 
-## 🏗️ Architecture Technique
+* **Node.js** (Version 18 ou supérieure recommandée)
+* **Docker** (Pour lancer le backend et la base de données)
+* **Python 3.11+** (Optionnel, seulement si vous lancez le backend manuellement sans Docker)
 
-Le projet repose sur une architecture micro-services conteneurisée :
+## 📥 Instructions d’installation
 
-* **Frontend :** Next.js 14 (React, Tailwind CSS, TypeScript).
-* **Backend :** FastAPI (Python 3.11, Asynchrone).
-* **Bases de Données :**
-    * **MongoDB :** Stockage des documents hiérarchiques (Utilisateurs, Cours, Tests).
-    * **PostgreSQL :** Stockage des données structurées pour les statistiques (`DailyAnalytics`).
-    * **Redis :** Gestion du cache pour optimiser les performances de lecture.
+1.  **Cloner le dépôt :**
+    ```bash
+    git clone [https://github.com/irealycode/teachup.git](https://github.com/irealycode/teachup.git)
+    cd teachup
+    ```
 
----
+2.  **Installation des dépendances Frontend :**
+    ```bash
+    # À la racine du projet
+    npm install
+    ```
 
-## 📋 Prérequis
+3.  **Préparation du Backend :**
+    Le backend est configuré pour fonctionner avec Docker. Aucune installation manuelle n'est requise si vous utilisez Docker.
 
-Avant de lancer le projet, assurez-vous d'avoir installé les outils suivants sur votre machine :
+    ```bash
+    cd backend
+    docker-compose up --build
+    ```
 
-1.  **Docker Desktop** (Engine v20.10+ & Compose v2.0+).
-2.  **Node.js** (v18+) et **npm** (si lancement hors Docker).
-3.  **Python** (v3.11+) (si lancement hors Docker).
+## 🚀 Commandes de lancement
 
----
+Pour lancer l'application complète, exécutez le backend et le frontend dans deux terminaux séparés.
 
-## 🚀 Installation et Lancement
+### 1. Lancer le Frontend
 
-La méthode recommandée pour lancer l'application est d'utiliser **Docker Compose**, qui orchestre automatiquement le backend et les trois bases de données.
-
-### 1. Cloner le dépôt
+Utilisez NPM pour lancer next (mode dev) :
 
 ```bash
-git clone [https://github.com/irealycode/teachup.git](https://github.com/irealycode/teachup.git)
-cd teachup
+npm run dev
